@@ -9,6 +9,9 @@
  * 
  */
 
+use Contao\CoreBundle\Util\SymlinkUtil;
+use Webmozart\PathUtil\Path;
+
 $GLOBALS['TL_DCA']['tl_page']['palettes']['phpbb_forum'] = '{title_legend},title,type;{phpbb_legend},phpbb_alias,phpbb_path,phpbb_default_groups;{layout_legend:hide},includeLayout;cssClass;{tabnav_legend:hide},tabindex,accesskey;{publish_legend},published';
 
 $GLOBALS['TL_DCA']['tl_page']['config']['onsubmit_callback'][] = array('tl_page_phpbbforum', 'updateConfig');
@@ -66,9 +69,9 @@ class tl_page_phpbbforum extends tl_page {
         }
 
         Message::addInfo("Trying to set Forum Symlink");
-        if(file_exists($varValue . "/viewtopic.php")){
+        if(file_exists(Path::join(TL_ROOT, $varValue, "/viewtopic.php"))) {
             Message::addInfo("Forum found. Setting Link");
-            $result = symlink($varValue, $dc->activeRecord->phpbb_alias);
+            SymlinkUtil::symlink($varValue, $dc->activeRecord->phpbb_alias, TL_ROOT);
             if($result === true) {
                 Message::addInfo("Link Set");
             }
@@ -76,7 +79,7 @@ class tl_page_phpbbforum extends tl_page {
             if(!is_link($dc->activeRecord->phpbb_alias . '/ext/ctsmedia') ||
                 readlink($dc->activeRecord->phpbb_alias . '/ext/ctsmedia') != "../../contao/vendor/ctsmedia/contao-phpbb-bridge-bundle/src/Resources/phpBB/ctsmedia" ) {
                 Message::addInfo("Setting Vendor Link");
-                symlink(TL_ROOT . "/vendor/ctsmedia/contao-phpbb-bridge-bundle/src/Resources/phpBB/ctsmedia", $dc->activeRecord->phpbb_alias . '/ext/ctsmedia');
+                SymlinkUtil::symlink('vendor/ctsmedia/contao-phpbb-bridge-bundle/src/Resources/phpBB/ctsmedia', Path::join($dc->activeRecord->phpbb_alias, 'ext/ctsmedia'), TL_ROOT);
             }
 
             Message::addInfo("Please activate the contao extension in the phpbb backend");
