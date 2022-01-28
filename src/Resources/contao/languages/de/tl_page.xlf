@@ -19,8 +19,8 @@
                 <target>phpBB Installations Pfad</target>
             </trans-unit>
             <trans-unit id="tl_page.phpbb_path.1">
-                <source>Enter the path to your phpbb Installation. Can be absolute or relative to your Contao Installation (from the public web folder)</source>
-                <target>Geben Sie den Pfad zur phpBB Installation an. Kann absolut oder relativ sein (relativ vom Contao web Verzeichniss)</target>
+                <source>Enter the path to your phpbb Installation. Can be absolute or relative to your Contao installation.</source>
+                <target>Geben Sie den Pfad zur phpBB Installation an. Kann absolut oder relativ sein zum Contao Installationsverzeichnis sein.</target>
             </trans-unit>
             <trans-unit id="tl_page.phpbb_default_groups.0">
                 <source>Default Member Group(s)</source>

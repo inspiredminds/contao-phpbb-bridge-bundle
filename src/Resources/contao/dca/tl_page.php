@@ -10,6 +10,9 @@
  */
 
 use Contao\CoreBundle\Util\SymlinkUtil;
+use Contao\DataContainer;
+use Contao\Message;
+use Contao\System;
 use Webmozart\PathUtil\Path;
 
 $GLOBALS['TL_DCA']['tl_page']['palettes']['phpbb_forum'] = '{title_legend},title,type;{phpbb_legend},phpbb_alias,phpbb_path,phpbb_default_groups;{layout_legend:hide},includeLayout;cssClass;{tabnav_legend:hide},tabindex,accesskey;{publish_legend},published';
@@ -54,38 +57,41 @@ $GLOBALS['TL_DCA']['tl_page']['fields']['phpbb_default_groups'] = array
     'relation'                => array('type'=>'belongsToMany', 'load'=>'lazy')
 );
 
-class tl_page_phpbbforum extends tl_page {
+class tl_page_phpbbforum extends tl_page
+{
+    public function generatePhpbbLink($varValue, DataContainer $dc)
+    {
+        $webDir = System::getContainer()->getParameter('contao.web_dir');
+        $projectDir = System::getContainer()->getParameter('kernel.project_dir');
 
-    public function generatePhpbbLink($varValue, DataContainer $dc){
+        $varValue = Path::makeRelative($varValue, $projectDir);
+        $linkTarget = Path::join($projectDir, $varValue);
+        $linkPath = Path::join($webDir, $dc->activeRecord->phpbb_alias);
 
-        if(is_link($dc->activeRecord->phpbb_alias) && readlink($dc->activeRecord->phpbb_alias) == $varValue) {
-            Message::addInfo("Path to forum already set");
+        if (file_exists(Path::join($linkPath, '/viewtopic.php'))) {
+            Message::addInfo('Path to forum already set');
             return $varValue;
         }
 
-        if(is_link($dc->activeRecord->phpbb_alias)  !== false && readlink($dc->activeRecord->phpbb_alias) != $varValue) {
+        if (is_link($linkPath) && Path::normalize(readlink($linkPath)) !== $linkTarget) {
             Message::addInfo("Removing old link");
-            unlink($dc->activeRecord->phpbb_alias);
+            unlink($linkPath);
         }
 
-        Message::addInfo("Trying to set Forum Symlink");
-        if(file_exists(Path::join(TL_ROOT, $varValue, "/viewtopic.php"))) {
-            Message::addInfo("Forum found. Setting Link");
-            SymlinkUtil::symlink($varValue, $dc->activeRecord->phpbb_alias, TL_ROOT);
-            if($result === true) {
-                Message::addInfo("Link Set");
+        Message::addInfo('Trying to set Forum Symlink');
+        if (file_exists(Path::join($linkTarget, '/viewtopic.php'))) {
+            Message::addInfo('Forum found. Setting Link');
+            SymlinkUtil::symlink($linkTarget, $linkPath, $projectDir);
+            Message::addInfo('Link Set');
+
+            if (!is_link(Path::join($linkPath, '/ext/ctsmedia'))) {
+                Message::addInfo('Setting Vendor Link');
+                SymlinkUtil::symlink(Path::join($projectDir, 'vendor/ctsmedia/contao-phpbb-bridge-bundle/src/Resources/phpBB/ctsmedia'), Path::join($linkPath, 'ext/ctsmedia'), $projectDir);
             }
 
-            if(!is_link($dc->activeRecord->phpbb_alias . '/ext/ctsmedia') ||
-                readlink($dc->activeRecord->phpbb_alias . '/ext/ctsmedia') != "../../contao/vendor/ctsmedia/contao-phpbb-bridge-bundle/src/Resources/phpBB/ctsmedia" ) {
-                Message::addInfo("Setting Vendor Link");
-                SymlinkUtil::symlink('vendor/ctsmedia/contao-phpbb-bridge-bundle/src/Resources/phpBB/ctsmedia', Path::join($dc->activeRecord->phpbb_alias, 'ext/ctsmedia'), TL_ROOT);
-            }
-
-            Message::addInfo("Please activate the contao extension in the phpbb backend");
+            Message::addInfo('Please activate the contao extension in the phpbb backend');
         } else {
-            //Message::addError("Forum could not be found: ".$varValue . "/viewtopic.php");
-            throw new Exception("Forum could not be found: ".$varValue . "/viewtopic.php");
+            throw new Exception('Forum could not be found: '.$linkTarget.'/viewtopic.php');
         }
 
         return $varValue;

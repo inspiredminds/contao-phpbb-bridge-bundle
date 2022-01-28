@@ -15,6 +15,8 @@ use Monolog\Handler\FingersCrossedHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use phpbb\auth\provider\db;
+use phpbb\captcha\factory;
+use phpbb\config\config;
 
 
 /**
@@ -39,9 +41,9 @@ class AuthProvider extends db
     /**
      * AuthProvider constructor.
      */
-    public function __construct(\phpbb\db\driver\driver_interface $db, \phpbb\config\config $config, \phpbb\passwords\manager $passwords_manager, \phpbb\request\request $request, \phpbb\user $user, \Symfony\Component\DependencyInjection\ContainerInterface $phpbb_container, $phpbb_root_path, $php_ext, Connector $contaoConnector)
+    public function __construct(factory $captcha_factory, config $config, \phpbb\db\driver\driver_interface $db, \phpbb\passwords\manager $passwords_manager, \phpbb\request\request $request, \phpbb\user $user, \Symfony\Component\DependencyInjection\ContainerInterface $phpbb_container, $phpbb_root_path, $php_ext, Connector $contaoConnector)
     {
-        parent::__construct($db, $config, $passwords_manager, $request, $user, $phpbb_container, $phpbb_root_path, $php_ext);
+        parent::__construct($captcha_factory, $config, $db, $passwords_manager, $request, $user, $phpbb_container, $phpbb_root_path, $php_ext);
         $this->contaoConnector = $contaoConnector;
 
         $this->logger = new Logger('bridge_auth');

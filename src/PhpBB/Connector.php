@@ -435,7 +435,7 @@ class Connector
             $result = file_put_contents($configFile, Yaml::dump($currentConfig));
 
             if (!($result > 0)) {
-                throw new IOException('Could not write bidge config file ' . $configFile);
+                throw new IOException('Could not write bridge config file ' . $configFile);
             }
 
             // We've to load the new / updated config now for future processing
@@ -511,7 +511,7 @@ class Connector
     public function testCookieDomain(){
         $result = $this->compareCookieDomains();
 
-        if($result === false){
+        if ($result === false) {
             Message::addError('WARNING: The current Host ('.Environment::get('host').') differs from the cookie_domain configured in phpbb. Please make sure the used frontend domain is the same to: '.
                 System::getContainer()->get('phpbb_bridge.connector')->getDbConfig('cookie_domain')
             );

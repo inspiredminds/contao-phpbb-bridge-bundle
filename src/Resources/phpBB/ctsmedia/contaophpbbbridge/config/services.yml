@@ -46,8 +46,9 @@ services:
     auth.provider.contao:
         class: ctsmedia\contaophpbbbridge\contao\AuthProvider
         arguments:
-            - '@dbal.conn'
+            - '@captcha.factory'
             - '@config'
+            - '@dbal.conn'
             - '@passwords.manager'
             - '@request'
             - '@user'
