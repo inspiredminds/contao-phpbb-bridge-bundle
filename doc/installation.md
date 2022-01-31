@@ -137,7 +137,8 @@ services:
     phpbb_bridge.connector:
         class: Ctsmedia\Phpbb\BridgeBundle\PhpBB\Connector
         arguments: 
-            - "@doctrine.dbal.phpbb_connection"                
+            - "@doctrine.dbal.phpbb_connection" 
+            - '%phpbb_bridge.db.table_prefix%'               
 ```
 
 Then set the parameters in the `parameters.yml`
