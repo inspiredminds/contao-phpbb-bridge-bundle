@@ -1,7 +1,7 @@
 services:
     phpbb_bridge.command.cache:
         class: Ctsmedia\Phpbb\BridgeBundle\Command\CacheCommand
-        calls:
-            - ["setFramework", ["@contao.framework"]]
+        arguments:
+            - '@phpbb_bridge.connector'
         tags:
             -  { name: console.command }

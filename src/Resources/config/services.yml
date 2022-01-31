@@ -4,6 +4,7 @@ services:
         public: true
         arguments:
             - "@database_connection"
+            - '%phpbb_bridge.db.table_prefix%'
     phpbb_bridge.event_listener.contao_member_listener:
         class: Ctsmedia\Phpbb\BridgeBundle\EventListener\ContaoMemberListener
         public: true

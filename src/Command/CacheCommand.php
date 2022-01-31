@@ -11,9 +11,9 @@
 
 namespace Ctsmedia\Phpbb\BridgeBundle\Command;
 
-use Contao\CoreBundle\Framework\FrameworkAwareTrait;
 use Contao\System;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Ctsmedia\Phpbb\BridgeBundle\PhpBB\Connector;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,14 +25,22 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @package Ctsmedia\Phpbb\BridgeBundle\Command
  * @author Daniel Schwiperich <https://github.com/DanielSchwiperich>
  */
-class CacheCommand extends ContainerAwareCommand
+class CacheCommand extends Command
 {
-    use FrameworkAwareTrait;
+    protected static $defaultName = 'phpbb_bridge:cache';
+
+    private $connector;
+
+    public function __construct(Connector $connector)
+    {
+        parent::__construct();
+
+        $this->connector = $connector;
+    }
 
     protected function configure()
     {
         $this
-            ->setName('phpbb_bridge:cache')
             ->setDescription('Clears phpbb caches und layout files')
             ->addOption(
                 'cache-only',
@@ -45,19 +53,15 @@ class CacheCommand extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->getFramework()->initialize();
         $output->writeln('Clearing Forum Cache');
-        System::getContainer()->get('phpbb_bridge.connector')->clearForumCache();
+        $this->connector->clearForumCache();
 
         // Generate the layout if not explicitly asked for cache only
         if(!$input->getOption('cache-only')){
             $output->writeln('Generating Layout Files');
-            System::getContainer()->get('phpbb_bridge.connector')->generateForumLayoutFiles();
+            $this->connector->generateForumLayoutFiles();
         }
 
         return 0;
-
     }
-
-
 }

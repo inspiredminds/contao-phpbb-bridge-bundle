@@ -60,17 +60,16 @@ class Connector
     protected $debug = false;
 
 
-    public function __construct(Connection $db)
+    public function __construct(Connection $db, string $table_prefix)
     {
         $this->db = $db;
-        $this->table_prefix = System::getContainer()->getParameter('phpbb_bridge.db.table_prefix');
+        $this->table_prefix = $table_prefix;
         $configFile = __DIR__ . '/../Resources/phpBB/ctsmedia/contaophpbbbridge/config/contao.yml';
         if (is_file($configFile)) {
             $this->config = Yaml::parse(file_get_contents($configFile));
         } else {
             $this->config = Yaml::parse(file_get_contents($configFile . '.dist'));
         }
-
     }
 
     /**

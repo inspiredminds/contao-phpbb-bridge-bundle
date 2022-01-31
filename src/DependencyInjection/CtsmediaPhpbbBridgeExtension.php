@@ -31,6 +31,7 @@ class CtsmediaPhpbbBridgeExtension extends ConfigurableExtension
             $container,
             new FileLocator(__DIR__.'/../Resources/config')
         );
+
         $loader->load('services.yml');
         $loader->load('listener.yml');
         $loader->load('commands.yml');
@@ -39,6 +40,4 @@ class CtsmediaPhpbbBridgeExtension extends ConfigurableExtension
         $container->setParameter('phpbb_bridge.db.table_prefix', $mergedConfig['db']['table_prefix']);
         $container->setParameter('phpbb_bridge.allow_external_ip_access', $mergedConfig['allow_external_ip_access']);
     }
-
-
 }
