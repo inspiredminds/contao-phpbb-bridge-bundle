@@ -26,10 +26,9 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
 
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('phpbb_bridge');
-
-        $rootNode
+        $treeBuilder = new TreeBuilder('phpbb_bridge');
+        $treeBuilder
+            ->getRootNode()
             ->children()
                 ->arrayNode('db')
                     ->addDefaultsIfNotSet()
