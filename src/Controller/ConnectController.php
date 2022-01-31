@@ -13,6 +13,7 @@ namespace Ctsmedia\Phpbb\BridgeBundle\Controller;
 
 use Contao\Config;
 use Contao\CoreBundle\Exception\AccessDeniedException;
+use Contao\CoreBundle\Framework\ContaoFramework;
 use Contao\Environment;
 use Contao\FrontendIndex;
 use Contao\FrontendUser;
@@ -20,11 +21,12 @@ use Contao\Input;
 use Contao\PageModel;
 use Contao\System;
 use Ctsmedia\Phpbb\BridgeBundle\PageType\Forum;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Ctsmedia\Phpbb\BridgeBundle\PhpBB\Connector;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
  * Controller for Bridge requests from phpbb side
@@ -34,7 +36,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/phpbb_bridge", defaults={"_scope" = "frontend"})
  */
-class ConnectController extends Controller
+class ConnectController
 {
     /**
      * @var FrontendIndex null
@@ -43,6 +45,18 @@ class ConnectController extends Controller
 
     protected $debug = false;
 
+    private $framework;
+
+    private $tokenStorage;
+
+    private $connector;
+
+    public function __construct(ContaoFramework $framework, TokenStorageInterface $tokenStorage, Connector $connector)
+    {
+        $this->framework = $framework;
+        $this->tokenStorage = $tokenStorage;
+        $this->connector = $connector;
+    }
 
     /**
      * Call this function to validate the incoming request
@@ -52,36 +66,34 @@ class ConnectController extends Controller
      * redirect / reload if autologin was successful. The request headers should be kept though
      *
      */
-    protected function validateRequest()
+    protected function validateRequest(Request $request)
     {
         // Initialize Contao
-        $this->container->get('contao.framework')->initialize(); // we need to do this for autoloading contao classes
-        $req = $this->container->get('request_stack')->getCurrentRequest();
-        /* @var $req Request */
+        $this->framework->initialize(); // we need to do this for autoloading contao classes
 
         // Only requests from the bridge itself are allowed. Check if the specific header is set
-        if ($req->headers->get('x-requested-with') != 'ContaoPhpbbBridge') {
-            System::log('Not allowed to access phpbb bridge. Seems not coming fron the bridge. Path: '.$req->getPathInfo(), __METHOD__, TL_ERROR);
+        if ($request->headers->get('x-requested-with') != 'ContaoPhpbbBridge') {
+            System::log('Not allowed to access phpbb bridge. Seems not coming fron the bridge. Path: '.$request->getPathInfo(), __METHOD__, TL_ERROR);
             if(!$this->debug) throw new AccessDeniedException('Not allowed to access phpbb bridge');
         }
         // The bridge also always sets a internal proxy header
-        if (!$req->headers->get('x-forwarded-for')) {
+        if (!$request->headers->get('x-forwarded-for')) {
             System::log('Not allowed to access phpbb bridge without proxy header', __METHOD__, TL_ERROR);
             if(!$this->debug) throw new AccessDeniedException('Not allowed to access phpbb bridge without proxy header');
         }
 
         // Make sure we have an internat request
-        // we cannot use $req->server->get('REMOTE_ADDR') here, because symfone alters it
+        // we cannot use $request->server->get('REMOTE_ADDR') here, because symfone alters it
         if($_SERVER['REMOTE_ADDR'] != Environment::get('server')  && !System::getContainer()->getParameter('phpbb_bridge.allow_external_ip_access')){
             System::log('IPs did not match. clientIP: '.
-                $req->getClientIp().'| EnvClientIp '.Environment::get('ip').'| EnvServerIp '.Environment::get('server'),
+                $request->getClientIp().'| EnvClientIp '.Environment::get('ip').'| EnvServerIp '.Environment::get('server'),
             __METHOD__, TL_ERROR);
             if(!$this->debug) throw new AccessDeniedException('Not allowed to access phpbb bridge without proxy header');
         }
 
-        if($this->debug) System::log('Origin Request: '.$req->headers->get('x-requested-origin', '/NotSet'), __METHOD__ , TL_ACCESS);
+        if($this->debug) System::log('Origin Request: '.$request->headers->get('x-requested-origin', '/NotSet'), __METHOD__ , TL_ACCESS);
 
-        $req->attributes->set('isInternalForumRequest', true);
+        $request->attributes->set('isInternalForumRequest', true);
         $this->frontendIndex = new FrontendIndex();
 
     }
@@ -90,16 +102,16 @@ class ConnectController extends Controller
      * @Route("/autologin")
      * @return Response
      */
-    public function autologinAction(){
-        $this->validateRequest();
+    public function autologinAction(Request $request){
+        $this->validateRequest($request);
 
         $isLoggedIn = false;
         $userId     = 0;
         $username   = '';
         
         if(FE_USER_LOGGED_IN === true) {
-            $username = $this->container->get('security.token_storage')->getToken()->getUsername();
-            $phpBBuser = $this->container->get('phpbb_bridge.connector')->getUser($username);
+            $username = $this->tokenStorage->getToken()->getUsername();
+            $phpBBuser = $this->connector->getUser($username);
 
             if($phpBBuser !== null) {
                 $isLoggedIn = true;
@@ -125,8 +137,8 @@ class ConnectController extends Controller
      * @Route("/ping")
      * @return Response
      */
-    public function pingAction(){
-        $this->validateRequest();
+    public function pingAction(Request $request){
+        $this->validateRequest($request);
 
         $response = new JsonResponse();
         $response->setData(array(
@@ -140,9 +152,9 @@ class ConnectController extends Controller
      *
      * @Route("/test")
      */
-    public function testAction()
+    public function testAction(Request $request)
     {
-        $this->validateRequest();
+        $this->validateRequest($request);
 
         return new Response();
 
@@ -159,9 +171,9 @@ class ConnectController extends Controller
      *
      * @Route("/login")
      */
-    public function loginAction()
+    public function loginAction(Request $request)
     {
-        $this->validateRequest();
+        $this->validateRequest($request);
 
         $user = FrontendUser::getInstance();
         $result = $user->login();
@@ -190,9 +202,9 @@ class ConnectController extends Controller
      *
      * @Route("/logout")
      */
-    public function logoutAction()
+    public function logoutAction(Request $request)
     {
-        $this->validateRequest();
+        $this->validateRequest($request);
         $user = FrontendUser::getInstance();
         $result = $user->logout();
 
@@ -208,14 +220,14 @@ class ConnectController extends Controller
      *
      * @Route("/layout")
      */
-    public function layoutAction()
+    public function layoutAction(Request $request)
     {
-        $this->validateRequest();
+        $this->validateRequest($request);
 
         $objPage = PageModel::findOneByType('phpbb_forum');
         // Set the correct current page for navigation
         Environment::set('relativeRequest',
-            $this->container->get('phpbb_bridge.connector')->getBridgeConfig('forum_pageId')
+            $this->connector->getBridgeConfig('forum_pageId')
             .$GLOBALS['TL_CONFIG']['urlSuffix']
         );
         $response = $this->frontendIndex->run();

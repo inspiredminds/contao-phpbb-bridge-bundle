@@ -11,8 +11,7 @@
 
 namespace Ctsmedia\Phpbb\BridgeBundle\EventListener;
 
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 /**
  * Listener to pass the client IP through
@@ -27,10 +26,10 @@ class BypassProxyListener
      *
      * @param GetResponseEvent $event The event object
      */
-    public function onKernelRequest(GetResponseEvent $event)
+    public function onKernelRequest(RequestEvent $event)
     {
-
         $req = $event->getRequest();
+
         if ($req->headers->get('x-requested-with') == 'ContaoPhpbbBridge') {
             // Add the local ip to the trusted proxies ones so we don't get the Server IP as Client IP for incomming bridge requests
             $proxies = $req->getTrustedProxies();

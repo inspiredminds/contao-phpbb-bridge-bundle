@@ -1,0 +1,8 @@
+services:
+    Ctsmedia\Phpbb\BridgeBundle\Controller\ConnectController:
+        public: true
+        autoconfigure: true
+        arguments:
+            - '@contao.framework'
+            - '@security.token_storage'
+            - '@phpbb_bridge.connector'

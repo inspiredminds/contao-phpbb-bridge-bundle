@@ -35,6 +35,7 @@ class CtsmediaPhpbbBridgeExtension extends ConfigurableExtension
         $loader->load('services.yml');
         $loader->load('listener.yml');
         $loader->load('commands.yml');
+        $loader->load('controllers.yml');
 
         $container->setParameter('phpbb_bridge.dir', $mergedConfig['dir']);
         $container->setParameter('phpbb_bridge.db.table_prefix', $mergedConfig['db']['table_prefix']);
